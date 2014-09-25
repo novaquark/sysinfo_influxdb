@@ -27,6 +27,10 @@ To append FQDN of the running host at the end of injected data, use the `--fqdn`
 
     $GOPATH/bin/sysinfo_influxdb --fqdn
 
+To remove `cpu` row (sum of cpu0, cpu1, ...) from cpu metrics, use the `--nocpusum` flag :
+
+    $GOPATH/bin/sysinfo_influxdb --nocpusum
+
 To run in daemon mode (doesn't fork, just loop), use the `-D` option :
 
     $GOPATH/bin/sysinfo_influxdb -D
