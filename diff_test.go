@@ -11,16 +11,16 @@ package main
 
 import (
 	"fmt"
+	influxClient "github.com/influxdb/influxdb/client"
 	"math/rand"
 	"testing"
-	influxClient "github.com/influxdb/influxdb/client"
 )
 
 func TestSimple(t *testing.T) {
 	serie1 := &influxClient.Series{
 		Name:    "test_init",
-		Columns: []string{ "col0" },
-		Points:  [][]interface{}{ []interface{}{ 42 } },
+		Columns: []string{"col0"},
+		Points:  [][]interface{}{[]interface{}{42}},
 	}
 
 	if DiffFromLast(serie1) != nil {
@@ -41,35 +41,35 @@ func TestSimple(t *testing.T) {
 
 	serie2 := &influxClient.Series{
 		Name:    "test_init_other",
-		Columns: []string{ "col0", "col1" },
-		Points:  [][]interface{}{ []interface{}{ 23, 22 }, []interface{}{ 33, 32 } },
+		Columns: []string{"col0", "col1"},
+		Points:  [][]interface{}{[]interface{}{23, 22}, []interface{}{33, 32}},
 	}
 
 	if DiffFromLast(serie2) != nil {
 		t.Error("Another serie (different serie name) have to be initialized too")
 	}
 
-	serie1.Points = [][]interface{}{ []interface{}{ 23 } }
-	serie2.Points = [][]interface{}{ []interface{}{ 43, 42 }, []interface{}{ 32, 33 } }
+	serie1.Points = [][]interface{}{[]interface{}{23}}
+	serie2.Points = [][]interface{}{[]interface{}{43, 42}, []interface{}{32, 33}}
 
 	if DiffFromLast(serie1) == nil || DiffFromLast(serie2) == nil {
 		t.Error("Initialized diff serie shouldn't return nil")
 	}
 
-	if serie1.Points[0][0] != 23 - 42 {
+	if serie1.Points[0][0] != 23-42 {
 		t.Error("Bad diff:", serie1.Points[0][0], "!= 23 - 42")
 	}
 
-	if serie2.Points[0][0] != 43 - 23 {
+	if serie2.Points[0][0] != 43-23 {
 		t.Error("Bad diff:", serie2.Points[0][0], "!= 43 - 23")
 	}
-	if serie2.Points[0][1] != 42 - 22 {
+	if serie2.Points[0][1] != 42-22 {
 		t.Error("Bad diff:", serie2.Points[0][1], "!= 42 - 22")
 	}
-	if serie2.Points[1][0] != 32 - 33 {
+	if serie2.Points[1][0] != 32-33 {
 		t.Error("Bad diff:", serie2.Points[1][0], "!= 32 - 33")
 	}
-	if serie2.Points[1][1] != 33 - 32 {
+	if serie2.Points[1][1] != 33-32 {
 		t.Error("Bad diff:", serie2.Points[1][1], "!= 33 - 32")
 	}
 }
@@ -111,7 +111,7 @@ func TestRandom(t *testing.T) {
 
 	DiffFromLast(serie)
 
-	for h := 0; h < rand.Intn(50) + 10; h++ {
+	for h := 0; h < rand.Intn(50)+10; h++ {
 		oldPts = newPts
 		newPts = new([][]interface{})
 
@@ -121,9 +121,9 @@ func TestRandom(t *testing.T) {
 		// Compare
 		for i := 0; i < sizeX; i++ {
 			for j := 0; j < sizeY; j++ {
-				if serie.Points[i][j] != (*newPts)[i][j].(int) - (*oldPts)[i][j].(int) {
+				if serie.Points[i][j] != (*newPts)[i][j].(int)-(*oldPts)[i][j].(int) {
 					t.Error(fmt.Sprintf("Iteration %d; point %d,%d: expected %d, got %d", h, i, j,
-						(*newPts)[i][j].(int) - (*oldPts)[i][j].(int), serie.Points[i][j]))
+						(*newPts)[i][j].(int)-(*oldPts)[i][j].(int), serie.Points[i][j]))
 				}
 			}
 		}
