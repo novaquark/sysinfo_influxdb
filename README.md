@@ -41,10 +41,11 @@ Use the `-i` option to change the collect interval; this option preserves the co
 
     $GOPATH/bin/sysinfo_influxdb -i 1m
 
-To change data collected, use the `-c` option with one or more metrics type (`cpu`, `cpus`, `mem`, `swap`, `uptime`, `load`, `network`, `disks`) like this :
+To change data collected, use the `-c` option with one or more metrics type (`cpu`, `cpus`, `mem`, `swap`, `uptime`, `load`, `network`, `disks`, `mounts`) like this :
 
     $GOPATH/bin/sysinfo_influxdb -c cpus # Collect only CPUs related statistics by CPU core
     $GOPATH/bin/sysinfo_influxdb -c load,cpu,disks # Collect load average, global CPU and disks I/Os statistics
+    $GOPATH/bin/sysinfo_influxdb -c mem,mounts # Collect memory metrics and local filesystems usage
 
 On Linux hardened kernel, you must be allowed to read `/proc/net/dev` in order to collect networking statistics.
 
@@ -155,6 +156,20 @@ On Linux hardened kernel, you must be allowed to read `/proc/net/dev` in order t
 #### JSON
 
 	[{"name":"koala.disks","columns":["device","read_ios","read_merges","read_sectors","read_ticks","write_ios","write_merges","write_sectors","write_ticks","in_flight","io_ticks","time_in_queue"],"points":[["sda",0,0,0,0,0,0,0,0,0,0,0],["sda1",0,0,0,0,0,0,0,0,0,0,0],["sda2",0,0,0,0,0,0,0,0,0,0,0]]}]
+
+### Mountpoints
+
+#### Text
+
+    #0: koala.mounts
+    | mountpoint    | disk	    | free	        | total	        |
+    | /	            | /dev/sda2	| 117969465344	| 125855354880	|
+    | /home	        | /dev/sda6 | 50837757952   | 242004779008  |
+    | /boot	        | /dev/sda1	| 329293824	    | 486123520	    |
+
+#### JSON
+
+    [{"name":"koala.mounts","columns":["mountpoint","fstype","disk","free","total","usage"],"points":[["/","/dev/sda2","117969465344","125855354880"],["/home","/dev/sda6","50837757952","242004779008"],["/boot","/dev/sda1","329293824","486123520"]]}]
 
 ## Building
 

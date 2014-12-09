@@ -21,6 +21,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -69,8 +70,8 @@ func init() {
 	flag.StringVar(&databaseFlag, "database", "", "Name of the database to use.")
 	flag.StringVar(&databaseFlag, "d", "", "Name of the database to use (shorthand).")
 
-	flag.StringVar(&collectFlag, "collect", "cpu,cpus,mem,swap,uptime,load,network,disks", "Chose which data to collect.")
-	flag.StringVar(&collectFlag, "c", "cpu,cpus,mem,swap,uptime,load,network,disks", "Chose which data to collect (shorthand).")
+	flag.StringVar(&collectFlag, "collect", "cpu,cpus,mem,swap,uptime,load,network,disks,mounts", "Chose which data to collect.")
+	flag.StringVar(&collectFlag, "c", "cpu,cpus,mem,swap,uptime,load,network,disks,mounts", "Chose which data to collect (shorthand).")
 
 	flag.BoolVar(&daemonFlag, "daemon", false, "Run in daemon mode.")
 	flag.BoolVar(&daemonFlag, "D", false, "Run in daemon mode (shorthand).")
@@ -94,6 +95,16 @@ func getFqdn() string {
 	}
 
 	return strings.TrimSpace(string(fqdn))
+}
+
+// "in_array" style func for strings
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
@@ -162,6 +173,8 @@ func main() {
 				collectList = append(collectList, network)
 			case "disks":
 				collectList = append(collectList, disks)
+			case "mounts":
+				collectList = append(collectList, mounts)
 			default:
 				fmt.Fprintf(os.Stderr, "Unknown collect option `%s'\n", c)
 				return
@@ -531,6 +544,46 @@ func disks(prefix string, ch chan *influxClient.Series) error {
 		}
 
 		serie.Points = append(serie.Points, points)
+	}
+
+	ch <- DiffFromLast(serie)
+	return nil
+}
+
+func mounts(prefix string, ch chan *influxClient.Series) error {
+	serie := &influxClient.Series{
+		Name:    prefix + "mounts",
+		Columns: []string{"mountpoint", "disk", "free", "total"},
+		Points:  [][]interface{}{},
+	}
+
+	fi, err := os.Open("/proc/mounts")
+	if err != nil {
+		return err
+	}
+	defer fi.Close()
+
+	// Exclude virtual & system fstype
+	sysfs := []string{"binfmt_misc", "cgroup", "configfs", "debugfs", "devpts", "devtmpfs", "efivarfs", "fusectl", "mqueue", "none", "proc", "rootfs", "securityfs", "sysfs", "rpc_pipefs", "fuse.gvfsd-fuse", "tmpfs"}
+
+	scanner := bufio.NewScanner(fi)
+	for scanner.Scan() {
+		tmp := strings.Fields(scanner.Text())
+
+		// Some hack needed to remove "none" virtual mountpoints
+		if (stringInSlice(tmp[2], sysfs) == false) && (tmp[0] != "none") {
+			fs := syscall.Statfs_t{}
+
+			err := syscall.Statfs(tmp[1], &fs)
+			if err != nil {
+				return err
+			}
+
+			freeBytes := fs.Bfree * uint64(fs.Bsize)
+			totalBytes := fs.Blocks * uint64(fs.Bsize)
+
+			serie.Points = append(serie.Points, []interface{}{tmp[1], tmp[0], strconv.FormatUint(freeBytes, 10), strconv.FormatUint(totalBytes, 10)})
+		}
 	}
 
 	ch <- DiffFromLast(serie)
