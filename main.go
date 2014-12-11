@@ -582,10 +582,10 @@ func mounts(prefix string, ch chan *influxClient.Series) error {
 			freeBytes := fs.Bfree * uint64(fs.Bsize)
 			totalBytes := fs.Blocks * uint64(fs.Bsize)
 
-			serie.Points = append(serie.Points, []interface{}{tmp[1], tmp[0], strconv.FormatUint(freeBytes, 10), strconv.FormatUint(totalBytes, 10)})
+			serie.Points = append(serie.Points, []interface{}{tmp[1], tmp[0], freeBytes, totalBytes})
 		}
 	}
 
-	ch <- DiffFromLast(serie)
+	ch <- serie
 	return nil
 }
